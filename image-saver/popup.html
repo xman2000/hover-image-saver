@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="ui.css">
+</head>
+<body class="popup">
+  <div id="site-box">
+    <div class="site" id="site"></div>
+    <div class="current" id="current">
+      <div class="current-head">
+        <span>Currently saving to</span>
+        <span class="badge" id="current-badge"></span>
+      </div>
+      <div class="current-path" id="current-path"></div>
+      <button id="clear" class="link" hidden>Remove site folder (use default)</button>
+    </div>
+    <label for="folder">Change folder for this site</label>
+    <div class="row">
+      <input id="folder" type="text" spellcheck="false">
+      <button id="save">Save</button>
+    </div>
+    <p class="hint">A full path like <code>C:\Images\Site</code>, or a folder inside Downloads. Leave empty to use your default (<span id="default"></span>). <span id="status" class="status"></span></p>
+    <p id="helper-warning" class="warning" hidden>Full folder paths need a small helper program on your PC. <a href="https://github.com/xman2000/hover-image-saver#saving-to-any-folder-windows" target="_blank" rel="noopener">How to install it</a></p>
+  </div>
+  <p id="no-site" class="hint" hidden>This page doesn't have a site name. Images go to your default folder (<span id="default2"></span>).</p>
+
+  <div class="footer">
+    <button id="show-last" class="link">Show last saved image</button>
+    <button id="options" class="link">All settings</button>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

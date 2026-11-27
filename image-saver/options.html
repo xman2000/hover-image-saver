@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="ui.css">
+</head>
+<body>
+  <label for="folder">Default folder</label>
+  <div class="row">
+    <input id="folder" type="text" placeholder="Saved Images" spellcheck="false">
+    <button id="save">Save</button>
+  </div>
+  <p class="hint">
+    A full path like <code>C:\Images</code> or <code>\\nas\photos</code>, or a folder inside your Firefox
+    download folder like <code>Saved Images</code>. Leave empty to save straight into the download folder.
+    <span id="status" class="status"></span>
+  </p>
+  <p id="helper-warning" class="warning" hidden>
+    Full folder paths need a small helper program on your PC.
+    <a href="https://github.com/xman2000/hover-image-saver#saving-to-any-folder-windows" target="_blank" rel="noopener">How to install it</a>
+  </p>
+
+  <h2>Button</h2>
+  <div class="button-settings">
+    <div>
+      <div class="field-label">Corner</div>
+      <div class="corners" role="radiogroup" aria-label="Button corner">
+        <label><input type="radio" name="corner" value="top-left"><span>Top left</span></label>
+        <label><input type="radio" name="corner" value="top-right"><span>Top right</span></label>
+        <label><input type="radio" name="corner" value="bottom-left"><span>Bottom left</span></label>
+        <label><input type="radio" name="corner" value="bottom-right"><span>Bottom right</span></label>
+      </div>
+    </div>
+    <div class="size-field">
+      <label for="size" class="field-label">Size <span id="size-value" class="muted"></span></label>
+      <input id="size" type="range" min="20" max="64" step="2">
+      <label for="offsetX" class="field-label">Horizontal offset <span id="offsetX-value" class="muted"></span></label>
+      <input id="offsetX" type="range" min="0" max="100" step="1">
+      <label for="offsetY" class="field-label">Vertical offset <span id="offsetY-value" class="muted"></span></label>
+      <input id="offsetY" type="range" min="0" max="100" step="1">
+      <div class="preview" id="preview" aria-hidden="true"><div class="preview-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></div></div>
+    </div>
+  </div>
+
+  <h2>Skip thumbnails</h2>
+  <p class="hint" style="margin:0 0 10px">
+    Only show the button on images at least this big. This uses the image's real resolution, not how big
+    it looks on the page. Hover the button to see an image's resolution.
+  </p>
+  <div class="filter-sliders">
+    <div>
+      <label for="minWidth" class="field-label">Minimum width <span id="minWidth-value" class="muted"></span></label>
+      <input id="minWidth" type="range" min="0" max="1500" step="10">
+    </div>
+    <div>
+      <label for="minHeight" class="field-label">Minimum height <span id="minHeight-value" class="muted"></span></label>
+      <input id="minHeight" type="range" min="0" max="1500" step="10">
+    </div>
+  </div>
+
+  <h2>Site folders</h2>
+  <p class="hint" style="margin:0 0 8px">Set these from the toolbar button while you're on a site.</p>
+  <table><tbody id="sites"></tbody></table>
+  <p id="empty" class="empty" hidden>No sites have their own folder yet.</p>
+
+  <script src="options.js"></script>
+</body>
+</html>
