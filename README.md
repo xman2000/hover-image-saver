@@ -2,6 +2,8 @@
 
 A small Firefox add-on: hover over an image, click the button, and it's saved to your folder. No dialogs, no menus.
 
+![An image just saved with one click; the toolbar popup shows which folder this site saves to](docs/saved.png)
+
 - **One click to save.** A button appears on images when you hover over them.
 - **A folder per site.** Click the toolbar button on any site to choose where that site's images go.
 - **Any folder on Windows.** Save to full paths like `C:\Images\Wallpapers` or `\\nas\photos` with an optional helper program (see below). Without it, images go to folders inside your Firefox download folder.
@@ -20,6 +22,8 @@ Install it from [addons.mozilla.org](https://addons.mozilla.org/firefox/addon/ho
 - **Save an image:** hover over it and click the button. It turns green when the image is saved, or red if something went wrong (hover over it to see why).
 - **Set a folder for a site:** while you're on the site, click the Hover Image Saver toolbar button. The popup shows where that site's images currently go.
 - **Everything else:** `about:addons` → Hover Image Saver → Options. There you can set your default folder, the button's corner, size and offsets, the thumbnail filter, and see or remove site folders.
+
+![The toolbar popup and the settings page](docs/settings.png)
 
 Folders can be:
 
