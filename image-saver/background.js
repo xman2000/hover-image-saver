@@ -112,16 +112,45 @@ async function nativeCall(msg) {
 // What "Show last saved image" opens.
 let last = null; // { downloadId } or { path }
 
-async function save(url, tab) {
+// Did Firefox have to rename the download because a file with that name already existed?
+// Its "uniquify" turns photo.jpg into photo(1).jpg / photo (1).jpg.
+function wasRenamed(savedPath, wantedName) {
+  const saved = savedPath.split(/[\\/]/).pop();
+  if (saved.toLowerCase() === wantedName.toLowerCase()) return false;
+  const dot = wantedName.lastIndexOf(".");
+  const stem = dot > 0 ? wantedName.slice(0, dot) : wantedName;
+  const escaped = stem.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`^${escaped} ?\\(\\d+\\)(\\.[^.]+)?$`, "i").test(saved);
+}
+
+// mode: "check"   - save, but if a file with the same name exists, don't keep a second copy
+//       "replace" - overwrite the existing file
+//       "keep"    - keep both (the new one gets a (1) suffix)
+// Returns { exists: true, name } when "check" found an existing file, otherwise {}.
+async function save(url, tab, mode = "check") {
   const target = await folderFor(siteKey(tab.url || ""));
   const name = filenameFor(url);
-  const options = { url, conflictAction: "uniquify", saveAs: false, incognito: !!tab.incognito };
+  const options = { url, saveAs: false, incognito: !!tab.incognito };
 
   if (target.relative != null) {
     const dir = target.relative;
-    const downloadId = await browser.downloads.download({ ...options, filename: dir ? `${dir}/${name}` : name });
-    last = { downloadId };
-    return;
+    const id = await browser.downloads.download({
+      ...options,
+      filename: dir ? `${dir}/${name}` : name,
+      conflictAction: mode === "replace" ? "overwrite" : "uniquify",
+    });
+    if (mode === "check") {
+      await waitForDownload(id);
+      const [item] = await browser.downloads.search({ id });
+      if (item && wasRenamed(item.filename, name)) {
+        // Already there: remove the extra copy Firefox just made.
+        await browser.downloads.removeFile(id).catch(() => {});
+        browser.downloads.erase({ id }).catch(() => {});
+        return { exists: true, name };
+      }
+    }
+    last = { downloadId: id };
+    return {};
   }
 
   // Full path: make sure the helper is there before downloading anything.
@@ -129,15 +158,17 @@ async function save(url, tab) {
 
   // Let Firefox download it (cookies, private windows etc. keep working),
   // then have the helper move it out of the download folder.
-  const id = await browser.downloads.download({ ...options, filename: `${STAGING}/${name}` });
+  const id = await browser.downloads.download({ ...options, filename: `${STAGING}/${name}`, conflictAction: "uniquify" });
   await waitForDownload(id);
   const [item] = await browser.downloads.search({ id });
-  const res = await nativeCall({ type: "move", src: item.filename, dir: target.full });
+  const res = await nativeCall({ type: "move", src: item.filename, dir: target.full, name, mode });
   if (!res || !res.ok) throw new Error((res && res.error) || "Couldn't move the file");
 
   // The file isn't where Firefox thinks any more; drop the stale entry from the downloads list.
   browser.downloads.erase({ id }).catch(() => {});
+  if (res.exists) return { exists: true, name };
   last = { path: res.path };
+  return {};
 }
 
 browser.runtime.onMessage.addListener(async (msg, sender) => {
@@ -166,8 +197,9 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
   if (msg.type !== "save-image") return;
 
   try {
-    await save(msg.url, sender.tab || { url: sender.url });
-    return { ok: true };
+    const mode = ["check", "replace", "keep"].includes(msg.mode) ? msg.mode : "check";
+    const result = await save(msg.url, sender.tab || { url: sender.url }, mode);
+    return { ok: true, ...result };
   } catch (err) {
     return { ok: false, error: String(err && err.message ? err.message : err) };
   }

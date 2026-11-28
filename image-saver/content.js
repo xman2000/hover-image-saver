@@ -33,12 +33,14 @@
     button:hover { background: rgba(0, 96, 223, 0.92); transform: scale(1.06); }
     button.ok  { background: rgba(18, 140, 60, 0.95); }
     button.err { background: rgba(200, 30, 30, 0.95); }
+    button.dup { background: rgba(205, 128, 0, 0.95); }
+    button.dup:hover { background: rgba(225, 145, 0, 1); }
     button.busy { opacity: 0.6; cursor: progress; }
     svg {
       width: calc(var(--s) * 0.56); height: calc(var(--s) * 0.56);
       pointer-events: none; display: none; grid-area: 1 / 1;
     }
-    button:not(.ok):not(.err) .i-save, button.ok .i-ok, button.err .i-err { display: block; }
+    button:not(.ok):not(.err):not(.dup) .i-save, button.ok .i-ok, button.err .i-err, button.dup .i-dup { display: block; }
   `;
 
   const SVG_NS = "http://www.w3.org/2000/svg";
@@ -65,7 +67,9 @@
   btn.append(
     icon("i-save", "2.2", ["M12 3v12", "m7 10 5 5 5-5", "M5 21h14"]),
     icon("i-ok", "2.6", ["m5 12 5 5 9-10"]),
-    icon("i-err", "2.6", ["M6 6l12 12M18 6 6 18"])
+    icon("i-err", "2.6", ["M6 6l12 12M18 6 6 18"]),
+    // Two overlapping sheets: "you already have this one"
+    icon("i-dup", "2.2", ["M9 9h10v12H9z", "M5 15V3h10"])
   );
   shadow.append(style, btn);
 
@@ -206,7 +210,7 @@
         btn.className = "";
         btn.title = idleTitle();
       },
-      state === "err" ? 4000 : 1400
+      state === "err" ? 4000 : state === "dup" ? 8000 : 1400
     );
   }
 
@@ -221,14 +225,21 @@
     e.stopPropagation();
     if (!current || btn.classList.contains("busy")) return;
 
+    // Normal click: save, but tell me if a file with that name is already there.
+    // Click again while amber: replace it. Shift+click: keep both.
+    const wasDup = btn.classList.contains("dup");
+    const mode = e.shiftKey ? "keep" : wasDup ? "replace" : "check";
+
     let url = imageUrl(current);
     clearTimeout(resetTimer);
     btn.className = "busy";
     try {
       if (url.startsWith("blob:")) url = await blobToDataUrl(url);
-      const res = await browser.runtime.sendMessage({ type: "save-image", url });
-      if (res && res.ok) {
-        flash("ok", "Saved");
+      const res = await browser.runtime.sendMessage({ type: "save-image", url, mode });
+      if (res && res.ok && res.exists) {
+        flash("dup", `"${res.name}" is already in this folder.\nClick again to replace it, or Shift+click to keep both.`);
+      } else if (res && res.ok) {
+        flash("ok", mode === "replace" ? "Replaced" : mode === "keep" ? "Saved as a copy" : "Saved");
       } else {
         const error = (res && res.error) || "Couldn't save the image";
         flash("err", error);

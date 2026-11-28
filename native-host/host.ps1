@@ -3,7 +3,7 @@
 # 4-byte little-endian length followed by that many bytes of UTF-8 JSON.
 
 $ErrorActionPreference = 'Stop'
-$VERSION = 1
+$VERSION = 2
 $STAGING_DIR_NAME = '_hover-image-saver-tmp'
 
 $stdin = [Console]::OpenStandardInput()
@@ -57,10 +57,33 @@ function Invoke-Move($msg) {
         return @{ ok = $false; error = "Not a full folder path: $dir" }
     }
 
+    # The file name to save as (the staging copy may have a "(1)" suffix). Must be a plain name.
+    $name = [string]$msg.name
+    if (-not $name) { $name = Split-Path -Leaf $src }
+    if ($name -match '[\\/:*?"<>|]' -or $name -eq '.' -or $name -eq '..') {
+        return @{ ok = $false; error = "Bad file name: $name" }
+    }
+
     if (-not (Test-Path -LiteralPath $dir -PathType Container)) {
         New-Item -ItemType Directory -Path $dir -Force | Out-Null
     }
-    $target = Get-UniquePath $dir (Split-Path -Leaf $src)
+
+    # mode: check (default) - if a file with this name exists, leave it and discard the new copy
+    #       replace         - overwrite the existing file
+    #       keep            - keep both; the new one gets " (1)" etc.
+    $mode = [string]$msg.mode
+    $target = Join-Path $dir $name
+    if (Test-Path -LiteralPath $target) {
+        if ($mode -eq 'replace') {
+            Move-Item -LiteralPath $src -Destination $target -Force
+            return @{ ok = $true; path = $target; replaced = $true }
+        }
+        if ($mode -ne 'keep') {
+            Remove-Item -LiteralPath $src -Force
+            return @{ ok = $true; exists = $true; path = $target }
+        }
+        $target = Get-UniquePath $dir $name
+    }
     Move-Item -LiteralPath $src -Destination $target
     return @{ ok = $true; path = $target }
 }

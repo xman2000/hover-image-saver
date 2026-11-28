@@ -1,20 +1,20 @@
 {
   "manifest_version": 2,
   "name": "Hover Image Saver",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Hover over an image and click the button to save it straight to a folder. Set a different folder per site.",
   "homepage_url": "https://github.com/xman2000/hover-image-saver",
   "icons": {
     "48": "icon.svg",
     "96": "icon.svg"
   },
-  "permissions": ["downloads", "storage", "nativeMessaging", "<all_urls>"],
+  "permissions": ["downloads", "storage", "nativeMessaging", "*://*/*"],
   "background": {
     "scripts": ["background.js"]
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": ["*://*/*"],
       "js": ["content.js"],
       "run_at": "document_idle",
       "all_frames": true
